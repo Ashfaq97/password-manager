@@ -7,8 +7,8 @@ import db
 db.init_app(app)
 
 @app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+def homepage():
+    return render_template("homepage.html")
 
 def Checklogin():
     EID = request.form['Email ID']
