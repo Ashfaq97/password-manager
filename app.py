@@ -1,6 +1,4 @@
-from flask import Flask,request,render_template,return
-import os
-import sqlite3
+from flask import Flask, render_template, request, url_for
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'db.sqlite3'
@@ -8,18 +6,22 @@ app.config['DATABASE'] = 'db.sqlite3'
 import db
 db.init_app(app)
 
-@app.route("/")
-def homepage():
-    return render_template("homepage.html")
+@app.route("/", methods=['POST', 'GET'])
+def hello():
+    if request.method == "POST":
+        userEmail = request.form['userEmail']
+        return render_template('success.html')
 
-@app.route("/")
-def Checklogin():
-    EID = request.form['Email ID']
+    return render_template('index.html')
 
-@app.route("/register")
-def registerpage():
-    UN = request.form['Username']
-    UEID = request.form['User Email ID']
+
+
+@app.route("/success", methods=["GET"])
+def welcome():
+    return render_template('success.html')
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
