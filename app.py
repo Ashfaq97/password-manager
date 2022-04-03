@@ -12,6 +12,7 @@ db.init_app(app)
 def homepage():
     return render_template("homepage.html")
 
+@app.route("/")
 def Checklogin():
     EID = request.form['Email ID']
 
