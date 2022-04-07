@@ -1,13 +1,20 @@
 # app.py
 import os
-from flask import Flask,render_template,url_for,redirect
+from os.path import join, dirname, realpath
+from flask import Flask,render_template,url_for,redirect, request, send_from_directory
 from forms import signup, removeUser
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from werkzeug.utils import secure_filename
+
+UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads/..')
+UPLOAD_FOLDER = UPLOADS_PATH
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'mysectretkey'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 ###############################
 ## SQL SECTION
@@ -84,6 +91,43 @@ def remove_user():
 
         return redirect(url_for('users_list'))
     return render_template('remove-user.html',form=form)
+   
+   
+   
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == "GET":
+        return render_template('upload.html')
+
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+
+        # If the user selects a genuine file then save it in the folder
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('download_file', name=filename))
+
+
+@app.route('/uploads/<name>')
+def download_file(name):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], name)
 
 if __name__ == '__main__':
     app.run(debug=True)
