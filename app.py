@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 
-UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads/..')
+UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads')
 UPLOAD_FOLDER = UPLOADS_PATH
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
