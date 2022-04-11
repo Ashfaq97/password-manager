@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>LOGIN</h1>
+  <p>Please complete the form below and click sign up.</p>
+  <form method="POST">
+
+      {{ form.hidden_tag() }}
+	  {{ form.first_name.label  }} {{ form.first_name() }}
+	  {{ form.last_name.label }} {{ form.last_name() }}
+      {{ form.password.label }} {{ form.password() }}
+      {{ form.submit() }}
+  </form>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField
+from wtforms import StringField, IntegerField, SubmitField, PasswordField
 class signup(FlaskForm):
     first_name = StringField('First name : ')
     last_name =  StringField('Last name : ')
@@ -9,3 +9,9 @@ class signup(FlaskForm):
 class removeUser(FlaskForm):
     id = IntegerField("Id number of the user to remove : ")
     submit = SubmitField("Remove user")
+
+class LoginForm(FlaskForm):
+    first_name = StringField("First Name: ")
+    last_name = StringField("Last Name: ")
+    password = PasswordField("Password: ")
+    submit = SubmitField('Login')

@@ -2,16 +2,21 @@
 import os
 from os.path import join, dirname, realpath
 from flask import Flask,render_template,url_for,redirect, request, send_from_directory
-from forms import signup, removeUser
+from forms import signup, removeUser, LoginForm
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
+from PIL import Image
+import pytesseract
+import json
 
 UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads')
 UPLOAD_FOLDER = UPLOADS_PATH
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
+login_manager = LoginManager()
 
 app.config['SECRET_KEY'] = 'mysectretkey'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -29,31 +34,51 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
 db = SQLAlchemy(app)
 
 Migrate(app,db)
+login_manager.init_app(app)
 
 
 ###############################
 ## MODELS
 ###############################
 
-class Users(db.Model):
+class Users(UserMixin, db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer,primary_key = True)
     first_name = db.Column(db.Text)
     last_name = db.Column(db.Text)
     password = db.Column(db.Text)
+    ocr_results = db.Column(db.Text)
 
     def __init__(self,first_name,last_name,password):
         self.first_name = first_name
         self.last_name = last_name
-        self.password= password
+        self.password = password
+        self.ocr_results = "{}"
+    
+    @property
+    def is_authenticated(self):
+        return True
+    @property
+    def is_active(self):
+        return True
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self.id)
+
     def __repr__(self):
-        return f"The user name is : {self.first_name} {self.last_name} and password is {self.password} "
+        return f"The user name is : {self.first_name} {self.last_name} and password is {self.password} OCR results: {self.ocr_results} "
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
 
 @app.route('/')
 def index():
+    if not current_user:
+        return render_template('login.html')
+
     return render_template('home.html')
 
 @app.route('/sign-up',methods=['GET','POST'])
@@ -70,8 +95,37 @@ def add_user():
         db.session.add(new_user)
         db.session.commit()
 
+
         return redirect(url_for('users_list'))
     return render_template('sign-up.html',form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+
+    if request.method == 'GET':
+        return render_template('login.html', form=form)
+    
+    elif form.validate_on_submit():
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+        password = form.password.data
+
+        user = Users.query.filter_by(first_name=first_name, last_name=last_name, password=password).first()
+
+        if user:
+            login_user(user)
+            return redirect(url_for('index'))
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    if current_user.is_authenticated:
+        logout_user()
+        return redirect(url_for('index'))
+    else:
+        return redirect(url_for('index'))
+
+
 @app.route('/list-users')
 def users_list():
 
@@ -122,12 +176,27 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('download_file', name=filename))
+            return redirect(url_for('process_file', name=filename))
 
 
 @app.route('/uploads/<name>')
 def download_file(name):
     return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+
+@app.route('/ocr/<name>', methods=['GET'])
+def process_file(name):
+    if request.method == "GET":
+        path = os.path.join(app.config['UPLOAD_FOLDER'], name)
+        ocr_dict = json.loads(current_user.ocr_results)
+        ocr_dict[name] = pytesseract.image_to_string(path)
+        current_user.ocr_results = json.dumps(ocr_dict)
+        db.session.commit()
+        return(redirect(url_for('users_list')))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.filter_by(id=user_id).first()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
