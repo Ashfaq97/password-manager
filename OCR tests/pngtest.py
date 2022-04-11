@@ -1,4 +1,5 @@
 import pytesseract
+from PIL import Image
 from spellchecker import SpellChecker
 
 def spellcheck(words):
@@ -14,4 +15,4 @@ def spellcheck(words):
     return " ".join(corrected_words)
 
 print('Results from OCR:\n\n')
-print(pytesseract.image_to_string('test1.jpeg'))
+print(pytesseract.image_to_string('login page.png'))
