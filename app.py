@@ -5,11 +5,13 @@ from flask import Flask,render_template,url_for,redirect, request, send_from_dir
 from forms import signup, removeUser, LoginForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
 import json
+import uuid
 
 UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads')
 UPLOAD_FOLDER = UPLOADS_PATH
@@ -17,6 +19,7 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 login_manager = LoginManager()
+mail = Mail()
 
 app.config['SECRET_KEY'] = 'mysectretkey'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -35,6 +38,15 @@ db = SQLAlchemy(app)
 
 Migrate(app,db)
 login_manager.init_app(app)
+mail.init_app(app)
+
+#mail settings
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'comp680spring22@gmail.com'
+app.config['MAIL_PASSWORD'] = 'comp680devteam'
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
 
 
 ###############################
@@ -47,12 +59,16 @@ class Users(UserMixin, db.Model):
     first_name = db.Column(db.Text)
     last_name = db.Column(db.Text)
     password = db.Column(db.Text)
+    email = db.Column(db.Text)
+    auth_code = db.Column(db.Text)
     ocr_results = db.Column(db.Text)
 
-    def __init__(self,first_name,last_name,password):
+    def __init__(self,first_name,last_name, email, password):
         self.first_name = first_name
         self.last_name = last_name
+        self.email = email
         self.password = password
+        self.auth_code = str(uuid.uuid4())
         self.ocr_results = "{}"
     
     @property
@@ -76,7 +92,7 @@ class Users(UserMixin, db.Model):
 
 @app.route('/')
 def index():
-    if not current_user:
+    if not current_user.is_anonymous:
         return render_template('login.html')
 
     return render_template('home.html')
@@ -89,9 +105,10 @@ def add_user():
 
         first_name = form.first_name.data
         last_name = form.last_name.data
+        email = form.email.data
         password = form.password.data
 
-        new_user = Users(first_name,last_name,password)
+        new_user = Users(first_name,last_name, email, password)
         db.session.add(new_user)
         db.session.commit()
 
@@ -109,14 +126,37 @@ def login():
     elif form.validate_on_submit():
         first_name = form.first_name.data
         last_name = form.last_name.data
-        password = form.password.data
+        email = form.email.data
 
-        user = Users.query.filter_by(first_name=first_name, last_name=last_name, password=password).first()
+        user = Users.query.filter_by(first_name=first_name, last_name=last_name, email=email).first()
 
         if user:
-            login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('send_auth_code', user=user.email))
 
+@app.route('/login/<user>', methods=['GET', 'POST'])
+def send_auth_code(user):
+    auth_form = AuthCodeForm()
+    user_obj = Users.query.filter_by(email=user).first()
+
+    if request.method == 'GET':
+        if user:
+            msg = Message('Your Authentication Code', sender=app.config['MAIL_USERNAME'], recipients=[user])
+            msg.body = "Your authentication code is: " + user_obj.auth_code + ". \nUse this code to login."
+            mail.send(msg)
+
+            return render_template('auth_code.html', auth_form=auth_form)
+        else:
+            return redirect(url_for('login'))
+    else:
+        if auth_form.validate_on_submit():
+            user_code = auth_form.auth_field.data
+
+            if(user_code == user_obj.auth_code):
+                login_user(user_obj)
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('send_auth_code', user=user))
+             
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     if current_user.is_authenticated:
