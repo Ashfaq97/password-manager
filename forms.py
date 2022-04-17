@@ -13,5 +13,8 @@ class removeUser(FlaskForm):
 class LoginForm(FlaskForm):
     first_name = StringField("First Name: ")
     last_name = StringField("Last Name: ")
-    password = PasswordField("Password: ")
+    email = StringField("Email: ")
+    submit = SubmitField('Continue')
+class AuthCodeForm(FlaskForm):
+    auth_field = PasswordField("Authentication Code: ")
     submit = SubmitField('Login')
