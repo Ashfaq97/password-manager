@@ -2,7 +2,7 @@
 import os
 from os.path import join, dirname, realpath
 from flask import Flask,render_template,url_for,redirect, request, send_from_directory
-from forms import signup, removeUser, LoginForm
+from forms import signup, removeUser, LoginForm, AuthCodeForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_mail import Mail, Message
@@ -38,7 +38,6 @@ db = SQLAlchemy(app)
 
 Migrate(app,db)
 login_manager.init_app(app)
-mail.init_app(app)
 
 #mail settings
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -47,6 +46,8 @@ app.config['MAIL_USERNAME'] = 'comp680spring22@gmail.com'
 app.config['MAIL_PASSWORD'] = 'comp680devteam'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
+
+mail.init_app(app)
 
 
 ###############################
@@ -85,15 +86,15 @@ class Users(UserMixin, db.Model):
         return str(self.id)
 
     def __repr__(self):
-        return f"The user name is : {self.first_name} {self.last_name} and password is {self.password} OCR results: {self.ocr_results} "
+        return f"The user name is : {self.first_name} {self.last_name} OCR results: {self.ocr_results} "
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
 
 @app.route('/')
 def index():
-    if not current_user.is_anonymous:
-        return render_template('login.html')
+    if current_user.is_anonymous:
+        return redirect(url_for('login'))
 
     return render_template('home.html')
 
@@ -239,4 +240,4 @@ def load_user(user_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port = 80)
