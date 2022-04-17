@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>LOGIN</h1>
+  <p>Your personal authentication code was sent to your email.</p>
+  <form method="POST">
+      {{ auth_form.hidden_tag() }}
+      {{ auth_form.auth_field.label }} {{ auth_form.auth_field() }}
+      {{ auth_form.submit() }}
+  </form>
+</div>
+{% endblock %}
