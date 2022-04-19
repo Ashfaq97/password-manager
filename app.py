@@ -40,6 +40,7 @@ Migrate(app,db)
 login_manager.init_app(app)
 
 #mail settings
+#DO NOT TOUCH/MODIFY*****
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'comp680spring22@gmail.com'
