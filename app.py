@@ -96,6 +96,10 @@ class AuthenticationStub(db.Model):
     email = db.Column(db.Text)
     auth_code = db.Column(db.Text)
 
+    def __init__(self, email):
+        self.email = email
+        self.auth_code = uuid.uuid4()
+
     def get_email(self):
         return self.email
     
