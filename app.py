@@ -88,6 +88,25 @@ class Users(UserMixin, db.Model):
 
     def __repr__(self):
         return f"The user name is : {self.first_name} {self.last_name} OCR results: {self.ocr_results} "
+
+class AuthenticationStub(db.Model):
+    __tablename__ = 'AuthStubs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.Text)
+    auth_code = db.Column(db.Text)
+
+    def get_email(self):
+        return self.email
+    
+    def get_id(self):
+        return str(self.id)
+    
+    def get_auth_code(self):
+        return self.auth_code
+    
+    def __repr__(self):
+        return f"(email: {self.email} code: {self.auth_code} "
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
