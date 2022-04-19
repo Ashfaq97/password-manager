@@ -65,11 +65,11 @@ class Users(UserMixin, db.Model):
     auth_code = db.Column(db.Text)
     ocr_results = db.Column(db.Text)
 
-    def __init__(self,first_name,last_name, email, password):
+    def __init__(self,first_name,last_name, email):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.password = password
+        self.password = 'not applicable'
         self.auth_code = str(uuid.uuid4())
         self.ocr_results = "{}"
     
@@ -108,9 +108,8 @@ def add_user():
         first_name = form.first_name.data
         last_name = form.last_name.data
         email = form.email.data
-        password = form.password.data
 
-        new_user = Users(first_name,last_name, email, password)
+        new_user = Users(first_name,last_name, email)
         db.session.add(new_user)
         db.session.commit()
 
