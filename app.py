@@ -1,7 +1,7 @@
 # app.py
 import os
 from os.path import join, dirname, realpath
-from flask import Flask,render_template,url_for,redirect, request, send_from_directory
+from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
 from forms import signup, removeUser, LoginForm, AuthCodeForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
@@ -40,7 +40,6 @@ Migrate(app,db)
 login_manager.init_app(app)
 
 #mail settings
-#DO NOT TOUCH/MODIFY*****
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'comp680spring22@gmail.com'
@@ -65,14 +64,14 @@ class Users(UserMixin, db.Model):
     auth_code = db.Column(db.Text)
     ocr_results = db.Column(db.Text)
 
-    def __init__(self,first_name,last_name, email):
+    def __init__(self,first_name,last_name, email, password):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.password = 'not applicable'
+        self.password = password
         self.auth_code = str(uuid.uuid4())
         self.ocr_results = "{}"
-    
+
     @property
     def is_authenticated(self):
         return True
@@ -88,29 +87,6 @@ class Users(UserMixin, db.Model):
 
     def __repr__(self):
         return f"The user name is : {self.first_name} {self.last_name} OCR results: {self.ocr_results} "
-
-class AuthenticationStub(db.Model):
-    __tablename__ = 'AuthStubs'
-
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.Text)
-    auth_code = db.Column(db.Text)
-
-    def __init__(self, email):
-        self.email = email
-        self.auth_code = uuid.uuid4()
-
-    def get_email(self):
-        return self.email
-    
-    def get_id(self):
-        return str(self.id)
-    
-    def get_auth_code(self):
-        return self.auth_code
-    
-    def __repr__(self):
-        return f"(email: {self.email} code: {self.auth_code} "
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
@@ -131,8 +107,9 @@ def add_user():
         first_name = form.first_name.data
         last_name = form.last_name.data
         email = form.email.data
+        password = form.password.data
 
-        new_user = Users(first_name,last_name, email)
+        new_user = Users(first_name,last_name, email, password)
         db.session.add(new_user)
         db.session.commit()
 
@@ -146,7 +123,7 @@ def login():
 
     if request.method == 'GET':
         return render_template('login.html', form=form)
-    
+
     elif form.validate_on_submit():
         first_name = form.first_name.data
         last_name = form.last_name.data
@@ -180,7 +157,7 @@ def send_auth_code(user):
                 return redirect(url_for('index'))
             else:
                 return redirect(url_for('send_auth_code', user=user))
-             
+
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     if current_user.is_authenticated:
@@ -209,9 +186,9 @@ def remove_user():
 
         return redirect(url_for('users_list'))
     return render_template('remove-user.html',form=form)
-   
-   
-   
+
+
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -221,7 +198,9 @@ def allowed_file(filename):
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == "GET":
-        return render_template('upload.html')
+        images = os.listdir('static/uploads')
+        images = ['uploads/' + file for file in images]
+        return render_template('upload.html', images=images)
 
     if request.method == 'POST':
         # check if the post request has the file part
