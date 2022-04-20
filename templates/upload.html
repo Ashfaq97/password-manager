@@ -2,7 +2,8 @@
 <html lang="en" dir="ltr">
     <head>
         <meta charset="utf-8">
-        <title></title>
+        <title>upload image</title>
+        <link rel="stylesheet" href="../static/style.css">
     </head>
     <body>
         <h1>Please upload the image </h1>
@@ -10,5 +11,11 @@
           <input type=file name=file>
           <input type=submit value=Upload>
         </form>
+        <div class="images">
+            {% for image in images %}
+
+                <img src="{{url_for('static', filename=image)}}" alt="{{image}}">
+            {% endfor %}
+        </div>
     </body>
 </html>
