@@ -60,17 +60,13 @@ class Users(UserMixin, db.Model):
     id = db.Column(db.Integer,primary_key = True)
     first_name = db.Column(db.Text)
     last_name = db.Column(db.Text)
-    password = db.Column(db.Text)
     email = db.Column(db.Text)
-    auth_code = db.Column(db.Text)
     ocr_results = db.Column(db.Text)
 
     def __init__(self,first_name,last_name, email):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.password = 'not applicable'
-        self.auth_code = str(uuid.uuid4())
         self.ocr_results = "{}"
     
     @property
@@ -98,7 +94,7 @@ class AuthenticationStub(db.Model):
 
     def __init__(self, email):
         self.email = email
-        self.auth_code = uuid.uuid4()
+        self.auth_code = str(uuid.uuid4())
 
     def get_email(self):
         return self.email
@@ -133,7 +129,9 @@ def add_user():
         email = form.email.data
 
         new_user = Users(first_name,last_name, email)
+        user_auth_stub = AuthenticationStub(email)
         db.session.add(new_user)
+        db.session.add(user_auth_stub)
         db.session.commit()
 
 
@@ -161,11 +159,12 @@ def login():
 def send_auth_code(user):
     auth_form = AuthCodeForm()
     user_obj = Users.query.filter_by(email=user).first()
+    auth_stub = AuthenticationStub.query.filter_by(email=user).first()
 
     if request.method == 'GET':
         if user:
             msg = Message('Your Authentication Code', sender=app.config['MAIL_USERNAME'], recipients=[user])
-            msg.body = "Your authentication code is: " + user_obj.auth_code + ". \nUse this code to login."
+            msg.body = "Your authentication code is: " + auth_stub.get_auth_code() + " \nUse this code to login."
             mail.send(msg)
 
             return render_template('auth_code.html', auth_form=auth_form)
@@ -175,7 +174,7 @@ def send_auth_code(user):
         if auth_form.validate_on_submit():
             user_code = auth_form.auth_field.data
 
-            if(user_code == user_obj.auth_code):
+            if(user_code == auth_stub.get_auth_code()):
                 login_user(user_obj)
                 return redirect(url_for('index'))
             else:
