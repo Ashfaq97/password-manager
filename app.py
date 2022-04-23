@@ -127,12 +127,16 @@ def add_user():
         first_name = form.first_name.data
         last_name = form.last_name.data
         email = form.email.data
+        user_obj = Users.query.filter_by(email=email).first()
 
-        new_user = Users(first_name,last_name, email)
-        user_auth_stub = AuthenticationStub(email)
-        db.session.add(new_user)
-        db.session.add(user_auth_stub)
-        db.session.commit()
+        if user_obj == None:
+            new_user = Users(first_name,last_name, email)
+            user_auth_stub = AuthenticationStub(email)
+            db.session.add(new_user)
+            db.session.add(user_auth_stub)
+            db.session.commit()
+        else:
+            return render_template('duplicate_user.html')
 
 
         return redirect(url_for('users_list'))
