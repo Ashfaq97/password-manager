@@ -1,14 +1,26 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-    <head>
-        <meta charset="utf-8">
-        <title></title>
-    </head>
-    <body>
+{% extends "base.html" %}
+{% block content %}
+        <style>
+            .invis {
+                display: none;
+            }
+        </style>
         <h1>Please upload the image </h1>
-        <form method="post" enctype="multipart/form-data">
+        <form id="fileForm" method="post" enctype="multipart/form-data">
           <input type=file name=file>
           <input type=submit value=Upload>
         </form>
-    </body>
-</html>
+
+        <div id="flashes" class="invis pt-2 text-center">
+            <p class="h2">Uploading your file. . .</p>
+        </div>
+
+        <script type="text/javascript">
+            function notifyUser() {
+                var flashes = document.getElementById("flashes");
+                flashes.classList.remove("invis");
+            }
+            var form = document.getElementById("fileForm");
+            form.addEventListener('submit', notifyUser);
+        </script>
+{% endblock content %}

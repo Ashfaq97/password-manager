@@ -1,7 +1,7 @@
 # app.py
 import os
 from os.path import join, dirname, realpath
-from flask import Flask,render_template,url_for,redirect, request, send_from_directory
+from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
 from forms import signup, removeUser, LoginForm, AuthCodeForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
@@ -55,6 +55,7 @@ mail.init_app(app)
 ## MODELS
 ###############################
 
+#The representation of a user in our database
 class Users(UserMixin, db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer,primary_key = True)
@@ -85,6 +86,7 @@ class Users(UserMixin, db.Model):
     def __repr__(self):
         return f"The user name is : {self.first_name} {self.last_name} OCR results: {self.ocr_results} "
 
+#Helps with passwordless authentication
 class AuthenticationStub(db.Model):
     __tablename__ = 'AuthStubs'
 
@@ -106,7 +108,30 @@ class AuthenticationStub(db.Model):
         return self.auth_code
     
     def __repr__(self):
-        return f"(email: {self.email} code: {self.auth_code} "
+        return f"(email: {self.email} code: {self.auth_code}) "
+
+#ties uploaded files to user for ease of removal on user delete  
+class UserFileInfo(db.Model):
+    __tablename__ = 'UserFileInfo'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.Text)
+    filename = db.Column(db.Text)
+
+    def __init__(self, email, filename):
+        self.email = email
+        self.filename = "".join([UPLOADS_PATH, filename])
+    
+    def get_email(self):
+        return self.email
+    
+    def get_filename(self):
+        return self.filename
+    
+    def get_id(self):
+        return str(self.id)
+
+    def __repr__(self):
+        return f"(email: {self.email}, filename: {self.filename}) "
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
@@ -120,6 +145,9 @@ def index():
 
 @app.route('/sign-up',methods=['GET','POST'])
 def add_user():
+    if not current_user.is_anonymous:
+        return redirect(url_for('index'))
+
     form = signup()
 
     if form.validate_on_submit():
@@ -144,6 +172,8 @@ def add_user():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if not current_user.is_anonymous:
+        return redirect(url_for('index'))
     form = LoginForm()
 
     if request.method == 'GET':
@@ -195,12 +225,15 @@ def logout():
 
 @app.route('/list-users')
 def users_list():
-
+    if current_user.is_anonymous:
+        return redirect(url_for('login'))
     users = Users.query.all()
     return render_template('list-users.html',users=users)
 
 @app.route('/delete', methods=['GET','POST'])
 def remove_user():
+    if current_user.is_anonymous:
+        return redirect(url_for('index'))
 
     form = removeUser()
 
@@ -223,6 +256,9 @@ def allowed_file(filename):
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
+    if current_user.is_anonymous:
+        return redirect(url_for('login'))
+
     if request.method == "GET":
         return render_template('upload.html')
 
