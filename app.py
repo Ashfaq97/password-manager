@@ -132,6 +132,23 @@ class UserFileInfo(db.Model):
 
     def __repr__(self):
         return f"(email: {self.email}, filename: {self.filename}) "
+
+class Infopage(db.Model):
+    __tablename__ = "Infopage"
+    id = db.Column(db.Integer, primary_key=True)
+    service_name = db.Column(db.Text)
+    email = db.Column(db.Text)
+    password = db.Column(db.Text)
+
+    def __init__(self, service_name, email, password):
+        self.service_name = service_name
+        self.email = email
+        self.password = password
+
+    def __repr__(self):
+        return f"The service name is: {self.service_name} Email is : {self.email} and password is  : {self.password}"
+
+
 ###############################
 ## VIEW FUNTIONS/FORMS
 ###############################
@@ -300,6 +317,36 @@ def process_file(name):
 def load_user(user_id):
     return Users.query.filter_by(id=user_id).first()
 
+@app.route("/EnteryForm", methods=["GET", "POST"])
+def add_info():
 
-if __name__ == '__main__':
-    app.run(debug=True, port = 80)
+    if current_user.is_anonymous:
+        return redirect(url_for("login"))
+
+    form = EnteryForm()
+
+    if form.validate_on_submit():
+
+        service_name = form.service_name.data
+        email = form.email.data
+        password = form.password.data
+        new_service = Infopage(service_name, email, password)
+        db.session.add(new_service)
+        db.session.commit()
+        return redirect(url_for("info_list"))
+
+    return render_template("EnteryForm.html", form=form)
+
+
+@app.route("/info-list")
+def info_list():
+    if current_user.is_anonymous:
+        return redirect(url_for("login"))
+
+    infopage = Infopage.query.all()
+    return render_template("info_list.html", infopage=infopage)
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=80)
+
