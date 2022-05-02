@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>Entery Form</h1>
+  <p>Please complete the form below and save the information</p>
+  <form method="POST">
+
+      {{ form.hidden_tag() }}
+      {{ form.service_name.label }} {{ form.service_name() }}
+      {{ form.email.label }} {{ form.email() }}
+	    {{ form.password.label }} {{ form.password() }}
+      {{ form.submit() }}
+  </form>
+</div>
+{% endblock %}
