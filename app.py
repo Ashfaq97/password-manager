@@ -2,7 +2,7 @@
 import os
 from os.path import join, dirname, realpath
 from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
-from forms import signup, removeUser, LoginForm, AuthCodeForm
+from forms import signup, removeUser, LoginForm, AuthCodeForm, EnteryForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_mail import Mail, Message
