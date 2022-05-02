@@ -20,3 +20,9 @@ class LoginForm(FlaskForm):
 class AuthCodeForm(FlaskForm):
     auth_field = PasswordField("Authentication Code: ")
     submit = SubmitField('Login')
+
+class EnteryForm(FlaskForm):
+    service_name = StringField("Service Name: ")
+    email = StringField("Email: ")
+    password = StringField("Password: ")
+    submit = SubmitField('Save')
