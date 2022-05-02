@@ -225,6 +225,12 @@ def upload_file():
 @app.route('/uploads/<name>')
 def download_file(name):
     return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+ 
+@app.route('/user_home')
+def user_home():
+    images = os.listdir('static/uploads')
+    images = ['uploads/' + file for file in images]
+    return render_template('user_home.html', images=images)
 
 @app.route('/ocr/<name>', methods=['GET'])
 def process_file(name):
