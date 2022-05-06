@@ -12,6 +12,8 @@ from PIL import Image
 import pytesseract
 import json
 import uuid
+from datetime import datetime, timedelta
+import time
 
 UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads')
 UPLOAD_FOLDER = UPLOADS_PATH
@@ -59,10 +61,14 @@ mail.init_app(app)
 class Users(UserMixin, db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer,primary_key = True)
+    num_attempts = db.Column(db.Integer, default=5)
     first_name = db.Column(db.Text)
     last_name = db.Column(db.Text)
     email = db.Column(db.Text)
     ocr_results = db.Column(db.Text)
+    locked = db.Column(db.Boolean, default=False)
+    last_login = db.Column(db.DateTime)
+    locked_until = db.Column(db.DateTime)
 
     def __init__(self,first_name,last_name, email):
         self.first_name = first_name
@@ -190,7 +196,10 @@ def add_user():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if not current_user.is_anonymous:
-        return redirect(url_for('index'))
+        if not current_user.locked:
+            return redirect(url_for('index'))
+        else:
+            return redirect(url_for('account_locked', user=current_user.email))
     form = LoginForm()
 
     if request.method == 'GET':
@@ -210,7 +219,15 @@ def login():
 def send_auth_code(user):
     auth_form = AuthCodeForm()
     user_obj = Users.query.filter_by(email=user).first()
+
+    if user_obj.locked:
+        return redirect(url_for('account_locked', user=user_obj.email))
+
+    print('Attempts: ', user_obj.num_attempts)
     auth_stub = AuthenticationStub.query.filter_by(email=user).first()
+
+    if user_obj.locked:
+        return redirect(url_for('account_locked', user=user_obj.email))
 
     if request.method == 'GET':
         if user:
@@ -227,10 +244,40 @@ def send_auth_code(user):
 
             if(user_code == auth_stub.get_auth_code()):
                 login_user(user_obj)
+                user_obj.num_attempts = 5
+                db.session.commit()
                 return redirect(url_for('index'))
             else:
-                return redirect(url_for('send_auth_code', user=user))
-             
+                user_obj.num_attempts = user_obj.num_attempts - 1
+                db.session.commit()
+                if user_obj.num_attempts > 0:
+                    return redirect(url_for('send_auth_code', user=user))
+                else:
+                    user_obj.locked = True
+                    user_obj.locked_until = datetime.now() + timedelta(minutes=5)
+                    db.session.commit()
+                    return redirect(url_for('account_locked', user=user_obj.email))
+
+@app.route('/locked/<user>', methods=['GET', 'POST'])
+def account_locked(user):
+    user_obj = Users.query.filter_by(email=user).first()
+    current_time = datetime.now()
+
+    print('Locked until: ', user_obj.locked_until)
+
+    if not user_obj.locked:
+        user_obj.num_attempts = 5
+        user_obj.locked = False
+        db.session.commit()
+        return redirect(url_for('login'))
+    elif current_time >= user_obj.locked_until:
+        user_obj.num_attempts = 5
+        user_obj.locked = False 
+        db.session.commit()
+        return redirect(url_for('login'))
+    else:
+        return render_template('locked.html')
+
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     if current_user.is_authenticated:
