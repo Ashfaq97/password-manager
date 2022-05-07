@@ -359,6 +359,14 @@ def process_file(name):
         current_user.ocr_results = json.dumps(ocr_dict)
         db.session.commit()
         return(redirect(url_for('users_list')))
+       
+       
+ @app.route('/user_home')
+def user_home():
+    images = os.listdir('static/uploads')
+    images = ['uploads/' + file for file in images]
+    return render_template('user_home.html', images=images)
+       
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -372,6 +380,7 @@ def add_info():
 
     form = EnteryForm()
 
+    
     if form.validate_on_submit():
 
         service_name = form.service_name.data
