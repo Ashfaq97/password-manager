@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>User Page</title>
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+    <body>
+        <h1>Welcome to your home page!</h1>
+        <h3>Images that you saved: </h3>
+        <div class="images">
+            {% for image in images %}
+
+                <img src="{{url_for('static', filename=image)}}" alt="{{image}}">
+
+            {% endfor %}
+        </div>
+    </body>
+</html>
