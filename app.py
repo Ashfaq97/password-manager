@@ -214,6 +214,10 @@ def login():
 
         if user:
             return redirect(url_for('send_auth_code', user=user.email))
+        else:
+            new_form = LoginForm()
+            flash("Invalid user information.")
+            return render_template('login.html', form=new_form)
 
 @app.route('/login/<user>', methods=['GET', 'POST'])
 def send_auth_code(user):
@@ -361,7 +365,7 @@ def process_file(name):
         return(redirect(url_for('users_list')))
        
        
- @app.route('/user_home')
+@app.route('/user_home')
 def user_home():
     images = os.listdir('static/uploads')
     images = ['uploads/' + file for file in images]

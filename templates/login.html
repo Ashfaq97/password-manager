@@ -13,4 +13,12 @@
   </form>
   <p class="text-info">Don't have an account? Click <a class="text-primary" href="{{ url_for('add_user') }}">here</a>.</p>
 </div>
+
+<div class="text-center">
+  {% with messages = get_flashed_messages() %}
+    {% for msg in messages %}
+      <p class="text-danger">{{ msg }}</p>
+    {% endfor %}
+  {% endwith %}
+</div>
 {% endblock %}
