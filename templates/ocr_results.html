@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center">
+    <h3 class="text-dark">Below are the results from OCR</h3>
+    <p class="text-dark">If these results are incorrect please replace with the proper text</p>
+    <form method="POST" action="">
+        {{ ocrf.hidden_tag() }}
+        {{ ocrf.input.label }}<br>
+        {{ ocrf.input(cols=50, rows=50) }}<br>
+        {{ ocrf.submit() }}
+    </form>
+</div>
+{% endblock %}

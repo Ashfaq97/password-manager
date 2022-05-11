@@ -1,8 +1,8 @@
 # app.py
 import os
 from os.path import join, dirname, realpath
-from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
-from forms import signup, removeUser, LoginForm, AuthCodeForm, EnteryForm
+from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash, session
+from forms import signup, removeUser, LoginForm, AuthCodeForm, EnteryForm, OCRForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_mail import Mail, Message
@@ -267,8 +267,6 @@ def account_locked(user):
     user_obj = Users.query.filter_by(email=user).first()
     current_time = datetime.now()
 
-    print('Locked until: ', user_obj.locked_until)
-
     if not user_obj.locked:
         user_obj.num_attempts = 5
         user_obj.locked = False
@@ -354,15 +352,22 @@ def upload_file():
 def download_file(name):
     return send_from_directory(app.config["UPLOAD_FOLDER"], name)
 
-@app.route('/ocr/<name>', methods=['GET'])
+@app.route('/ocr/<name>', methods=['GET', 'POST'])
 def process_file(name):
+    ocrf = OCRForm()
+
     if request.method == "GET":
         path = os.path.join(app.config['UPLOAD_FOLDER'], name)
-        ocr_dict = json.loads(current_user.ocr_results)
-        ocr_dict[name] = pytesseract.image_to_string(path)
-        current_user.ocr_results = json.dumps(ocr_dict)
-        db.session.commit()
-        return(redirect(url_for('users_list')))
+        ocrf.input.data = pytesseract.image_to_string(path)
+        #replace with render to seperate page
+        return render_template('ocr_results.html', name=name, ocrf=ocrf)
+    else:
+        if ocrf.validate_on_submit():
+            ocr_dict = json.loads(current_user.ocr_results)
+            ocr_dict[name] = ocrf.input.data
+            current_user.ocr_results = json.dumps(ocr_dict)
+            db.session.commit()
+            return redirect(url_for('users_list'))
        
        
 @app.route('/user_home')

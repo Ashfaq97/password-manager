@@ -1,6 +1,6 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, PasswordField
+from wtforms import StringField, IntegerField, SubmitField, PasswordField, TextAreaField
 
 class signup(FlaskForm):
     first_name = StringField('First name : ')
@@ -26,3 +26,7 @@ class EnteryForm(FlaskForm):
     email = StringField("Email: ")
     password = StringField("Password: ")
     submit = SubmitField('Save')
+
+class OCRForm(FlaskForm):
+    input = TextAreaField("Results from OCR: ")
+    submit = SubmitField('Submit Data')
