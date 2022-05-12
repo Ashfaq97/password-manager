@@ -125,7 +125,7 @@ class UserFileInfo(db.Model):
 
     def __init__(self, email, filename):
         self.email = email
-        self.filename = "".join([UPLOADS_PATH, filename])
+        self.filename = 'uploads/' + filename
     
     def get_email(self):
         return self.email
@@ -306,7 +306,16 @@ def remove_user():
     if form.validate_on_submit():
         id = form.id.data
         user = Users.query.get(id)
+        auth_stub = AuthenticationStub.query.filter_by(email=user.email).first()
+        usr_file_refs = UserFileInfo.query.filter_by(email=user.email)
+
+        if usr_file_refs:
+            for fptr in usr_file_refs:
+                db.session.delete(fptr)
+        
+
         db.session.delete(user)
+        db.session.delete(auth_stub)
         db.session.commit()
 
         return redirect(url_for('users_list'))
@@ -345,6 +354,10 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            user_file_ref = UserFileInfo(email=current_user.email, filename=filename)
+
+            db.session.add(user_file_ref)
+            db.session.commit()
             return redirect(url_for('process_file', name=filename))
 
 
@@ -372,8 +385,13 @@ def process_file(name):
        
 @app.route('/user_home')
 def user_home():
-    images = os.listdir('static/uploads')
-    images = ['uploads/' + file for file in images]
+    images = []
+    fptrs = UserFileInfo.query.filter_by(email=current_user.email)
+    
+    if fptrs:
+        for ptr in fptrs:
+            images.append(ptr.filename)
+
     return render_template('user_home.html', images=images)
        
 
