@@ -22,5 +22,10 @@
         {% else %}
             <h3 class="text-dark text-center">You have not uploaded any files. . .</h3>
         {% endif %}
+        
+        <div class="text-center">
+            <p class="text-info">Wanna delete your account? Click <a href="{{ url_for('remove_user') }}">here</a></p><br>
+            <p class="text-info">Wanna remove some uploaded files? Click <a href="{{ url_for('delete_user_file_info') }}">here</a></p>
+        </div>
     </body>
 {% endblock content %}

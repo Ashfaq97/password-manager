@@ -1,0 +1,19 @@
+{% extends 'base.html' %} 
+{% block title %}Delete OCR Entry{% endblock title %}
+{% block content %}
+<div class="jumbotron">
+    <form method="POST">
+        {{ frm.hidden_tag() }}
+        {{ frm.filename.label }} {{ frm.filename() }}<br>
+        {{ frm.submit() }}
+    </form>
+</div>
+
+<div class="text-center">
+    {% with messages = get_flashed_messages() %}
+      {% for msg in messages %}
+        <p class="text-danger">{{ msg }}</p>
+      {% endfor %}
+    {% endwith %}
+  </div>
+{% endblock %} 

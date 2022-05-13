@@ -22,7 +22,6 @@
 
       {% if not current_user.is_anonymous and not current_user.locked %}
         <a class="nav-item nav-link" href="{{ url_for('users_list') }}">List of Users</a>
-        <a class="nav-item nav-link" href="{{ url_for('remove_user') }}">Delete User</a>
         <a class="nav-item nav-link" href="{{ url_for('upload_file') }}">Upload</a>
         <a class="nav-item nav-link" href="{{ url_for('add_info') }}">Add service</a>
         <a class="nav-item nav-link" href="{{ url_for('info_list') }}">List of services</a>

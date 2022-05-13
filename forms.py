@@ -7,10 +7,7 @@ class signup(FlaskForm):
     last_name =  StringField('Last name : ')
     email = StringField("Email : ")
     submit = SubmitField('Sign up')
-class removeUser(FlaskForm):
-    id = IntegerField("Id number of the user to remove : ")
-    submit = SubmitField("Remove user")
-
+    
 class LoginForm(FlaskForm):
     first_name = StringField("First Name: ")
     last_name = StringField("Last Name: ")
@@ -30,3 +27,7 @@ class EnteryForm(FlaskForm):
 class OCRForm(FlaskForm):
     input = TextAreaField("Results from OCR: ")
     submit = SubmitField('Submit Data')
+
+class FileDeleteForm(FlaskForm):
+    filename = StringField("filename: ")
+    submit = SubmitField("Delete")

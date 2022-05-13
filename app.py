@@ -1,8 +1,8 @@
 # app.py
 import os
 from os.path import join, dirname, realpath
-from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash, session
-from forms import signup, removeUser, LoginForm, AuthCodeForm, EnteryForm, OCRForm
+from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
+from forms import signup, LoginForm, AuthCodeForm, EnteryForm, OCRForm, FileDeleteForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_mail import Mail, Message
@@ -301,28 +301,53 @@ def remove_user():
     if current_user.is_anonymous:
         return redirect(url_for('index'))
 
-    form = removeUser()
+    auth_stub = AuthenticationStub.query.filter_by(email=current_user.email).first()
+    fptrs = UserFileInfo.query.filter_by(email=current_user.email)
 
-    if form.validate_on_submit():
-        id = form.id.data
-        user = Users.query.get(id)
-        auth_stub = AuthenticationStub.query.filter_by(email=user.email).first()
-        usr_file_refs = UserFileInfo.query.filter_by(email=user.email)
+    if fptrs:
+        for ptr in fptrs:
+            db.session.delete(ptr)
 
-        if usr_file_refs:
-            for fptr in usr_file_refs:
-                db.session.delete(fptr)
-        
-
-        db.session.delete(user)
+    if auth_stub:
         db.session.delete(auth_stub)
-        db.session.commit()
 
-        return redirect(url_for('users_list'))
-    return render_template('remove-user.html',form=form)
-   
-   
-   
+    usr = Users.query.get(current_user.id)
+    db.session.delete(usr)
+    db.session.commit()
+    flash("Your account was successfully deleted.")
+
+    return redirect(url_for('login'))
+
+@app.route('/delete_ocr', methods=['GET', 'POST'])
+def delete_user_file_info():
+    file_form = FileDeleteForm()
+
+    if current_user.is_anonymous:
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        return render_template('delete_files.html', frm=file_form)
+    else:
+        if file_form.validate_on_submit():
+            fn = file_form.filename.data
+            usr = Users.query.get(current_user.id)
+            fp = None
+            fptrs = UserFileInfo.query.filter_by(email=usr.email)
+            for ptr in fptrs:
+                if ptr.filename == 'uploads/' + fn:
+                    fp = ptr
+                    break
+            
+            if fp:
+                UserFileInfo.query.filter(UserFileInfo.id == fp.id).delete()
+                ocr_dict = json.loads(usr.ocr_results)
+                ocr_dict.pop(fn)
+                usr.ocr_results = json.dumps(ocr_dict)
+                db.session.commit()
+                flash('Success')
+            
+    return redirect(url_for('delete_user_file_info', frm=file_form))
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
