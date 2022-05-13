@@ -1,0 +1,27 @@
+{% extends 'base.html' %} 
+{% block title %}Delete Stored Password{% endblock title %}
+{% block content %}
+<div>
+    <br><br>
+    <h2 class="text-center">Delete A Service</h2>
+    <br><br>
+    <form class="text-center my-auto" method="POST">
+        {{ dsvcf.hidden_tag() }}
+        <span class="text-centert ml-2">{{ dsvcf.service_name.label }} {{ dsvcf.service_name() }}</span>
+        <br><br>
+        <span class="text-center ml-3">{{ dsvcf.submit() }}</span>
+    </form>
+</div>
+
+<div class="text-center">
+    {% with messages = get_flashed_messages() %}
+      {% for msg in messages %}
+        {% if error %}
+            <p class="text-danger">{{ msg }}</p>
+        {% else %}
+            <p class="text-success">{{ msg }}</p>
+        {% endif %}
+      {% endfor %}
+    {% endwith %}
+  </div>
+{% endblock %}

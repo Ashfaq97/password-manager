@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-<title>{% block title %}Signup{% endblock %}</title>
+<title>{% block title %}Store a Password{% endblock %}</title>
 {% block content %}
 <div class="jumbotron">
-  <h1>Entery Form</h1>
+  <h1>Entry Form</h1>
   <p>Please complete the form below and save the information</p>
   <form method="POST">
 
@@ -12,5 +12,13 @@
 	    {{ form.password.label }} {{ form.password() }}
       {{ form.submit() }}
   </form>
+</div>
+
+<div class="text-center">
+  {% with messages = get_flashed_messages() %}
+    {% for msg in messages %}
+      <p class="text-danger">{{ msg }}</p>
+    {% endfor %}
+  {% endwith %}
 </div>
 {% endblock %}

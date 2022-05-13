@@ -12,6 +12,7 @@
 {% block content %}
     <body>
         <h1 class="text-center mb-4">Welcome to your home page!</h1>
+        <h2 class="text-center mb-4">Logged in as: {{ current_user.email }}</h2>
         {% if images|length > 0 %}
             <h3 class="text-center">Images that you saved: </h3>
             <div class="images">
@@ -26,6 +27,7 @@
         <div class="text-center">
             <p class="text-info">Wanna delete your account? Click <a href="{{ url_for('remove_user') }}">here</a></p><br>
             <p class="text-info">Wanna remove some uploaded files? Click <a href="{{ url_for('delete_user_file_info') }}">here</a></p>
+            <p class="text-info">Wanna remove some passwords? Click <a href="{{ url_for('delete_info') }}">here</a></p>
         </div>
     </body>
 {% endblock content %}

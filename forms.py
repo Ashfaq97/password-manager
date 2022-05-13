@@ -1,6 +1,6 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, PasswordField, TextAreaField
+from wtforms import StringField, SubmitField, PasswordField, TextAreaField, EmailField
 
 class signup(FlaskForm):
     first_name = StringField('First name : ')
@@ -31,3 +31,13 @@ class OCRForm(FlaskForm):
 class FileDeleteForm(FlaskForm):
     filename = StringField("filename: ")
     submit = SubmitField("Delete")
+
+class ServiceUpdateForm(FlaskForm):
+    service_name = StringField("Service you are updating: ")
+    new_email = EmailField("New Email:")
+    new_pwd = PasswordField("New Password:")
+    submit = SubmitField("Update Service")
+
+class ServiceDeleteForm(FlaskForm):
+    service_name = StringField("Service: ")
+    submit = SubmitField("Delete Service")

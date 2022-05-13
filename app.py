@@ -2,7 +2,7 @@
 import os
 from os.path import join, dirname, realpath
 from flask import Flask,render_template,url_for,redirect, request, send_from_directory, flash
-from forms import signup, LoginForm, AuthCodeForm, EnteryForm, OCRForm, FileDeleteForm
+from forms import signup, LoginForm, AuthCodeForm, EnteryForm, OCRForm, FileDeleteForm, ServiceUpdateForm, ServiceDeleteForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 from flask_mail import Mail, Message
@@ -13,7 +13,7 @@ import pytesseract
 import json
 import uuid
 from datetime import datetime, timedelta
-import time
+import time #to satisfy possible dependencies
 
 UPLOADS_PATH = join(dirname(realpath(__file__)), 'static/uploads')
 UPLOAD_FOLDER = UPLOADS_PATH
@@ -142,12 +142,14 @@ class UserFileInfo(db.Model):
 class Infopage(db.Model):
     __tablename__ = "Infopage"
     id = db.Column(db.Integer, primary_key=True)
+    owner = db.Column(db.Text)
     service_name = db.Column(db.Text)
     email = db.Column(db.Text)
     password = db.Column(db.Text)
 
     def __init__(self, service_name, email, password):
         self.service_name = service_name
+        self.owner = current_user.email
         self.email = email
         self.password = password
 
@@ -303,10 +305,15 @@ def remove_user():
 
     auth_stub = AuthenticationStub.query.filter_by(email=current_user.email).first()
     fptrs = UserFileInfo.query.filter_by(email=current_user.email)
+    pwds = Infopage.query.filter_by(owner=current_user.email)
 
     if fptrs:
         for ptr in fptrs:
             db.session.delete(ptr)
+    
+    if pwds:
+        for pwd in pwds:
+            db.session.delete(pwd)
 
     if auth_stub:
         db.session.delete(auth_stub)
@@ -379,10 +386,15 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            user_file_ref = UserFileInfo(email=current_user.email, filename=filename)
+            usr_file_ref = UserFileInfo.query.filter(UserFileInfo.email==current_user.email, UserFileInfo.filename=='uploads/' + filename).first()
 
-            db.session.add(user_file_ref)
-            db.session.commit()
+            if usr_file_ref != None:
+                print("Duplicate File")
+            else:
+                user_file_info = UserFileInfo(current_user.email, filename)
+                db.session.add(user_file_info)
+                db.session.commit()
+
             return redirect(url_for('process_file', name=filename))
 
 
@@ -424,7 +436,7 @@ def user_home():
 def load_user(user_id):
     return Users.query.filter_by(id=user_id).first()
 
-@app.route("/EnteryForm", methods=["GET", "POST"])
+@app.route("/add_service", methods=["GET", "POST"])
 def add_info():
 
     if current_user.is_anonymous:
@@ -432,26 +444,103 @@ def add_info():
 
     form = EnteryForm()
 
+    if request.method == 'GET':
+        return render_template('EnteryForm.html', form=form)
+    else:
+        if form.validate_on_submit():
+            name = form.service_name.data
+            email = form.email.data
+            password = form.password.data
+
+            if name == "":
+                flash('Service name cannot be empty')
+                return render_template('EnteryForm.html', form=form)
+            elif email == "":
+                flash('Email cannot be empty')
+                return render_template('EnteryForm.html', form=form)
+            elif password == "":
+                flash('Password cannot be empty')
+                return render_template('EnteryForm.html', form=form)
+            else:
+                service = Infopage.query.filter(Infopage.owner==current_user.email, Infopage.service_name==name).first()
+
+                if service:
+                    flash('This service already exists try updating it using either the link in the navigation bar or from your profile')
+                    return render_template('EnteryForm.html', form=form)
+                else:
+                    new_service = Infopage(name, email, password)
+                    db.session.add(new_service)
+                    db.session.commit()
     
-    if form.validate_on_submit():
+    return redirect(url_for('info_list'))
 
-        service_name = form.service_name.data
-        email = form.email.data
-        password = form.password.data
-        new_service = Infopage(service_name, email, password)
-        db.session.add(new_service)
-        db.session.commit()
-        return redirect(url_for("info_list"))
+@app.route("/service/update", methods=["GET", "POST"])
+def update_info():
+    if current_user.is_anonymous:
+        return redirect(url_for('login'))
 
-    return render_template("EnteryForm.html", form=form)
+    service_form = ServiceUpdateForm()
 
+    if request.method == 'GET':
+        render_template('update_service.html', svcf=service_form)
+    else:
+        if service_form.validate_on_submit():
+            name = service_form.service_name.data
+            svc_email = service_form.new_email.data
+            svc_pwd = service_form.new_pwd.data
+
+            if name == "":
+                flash("You must enter the name of the service you are updating")
+                return render_template('update_service.html', svcf=service_form, error=True)
+            else:
+                service =  Infopage.query.filter(Infopage.owner==current_user.email, Infopage.service_name==name).first()
+                
+                if service:
+                    if svc_email:
+                        service.email = svc_email
+                    if svc_pwd:
+                        service.password = svc_pwd
+
+                    db.session.commit()
+                    flash(f'The service {name} has been updated')
+                else:
+                    flash('No such service')
+                    return render_template('update_service.html', svcf=service_form, error=True)
+                    
+    return render_template('update_service.html', svcf=service_form, error=False)
+
+@app.route("/service/delete", methods=["GET", "POST"])
+def delete_info():
+    delete_service_form = ServiceDeleteForm()
+
+    if request.method == 'GET':
+        return render_template('delete_service.html', dsvcf=delete_service_form)
+    else:
+        if delete_service_form.validate_on_submit():
+            name = delete_service_form.service_name.data
+
+            if name == "":
+                flash('You must enter a service name')
+                return render_template('delete_service.html', dsvcf=delete_service_form, error=True)
+            else:
+                service = Infopage.query.filter(Infopage.owner==current_user.email, Infopage.service_name==name).first()
+
+                if service:
+                    db.session.delete(service)
+                    db.session.commit()
+                    flash('The service has been deleted')
+                else:
+                    flash('No such service')
+                    return render_template('delete_service.html', dsvcf=delete_service_form, error=True)
+    
+    return render_template('delete_service.html', dsvcf=delete_service_form, error=False)
 
 @app.route("/info-list")
 def info_list():
     if current_user.is_anonymous:
         return redirect(url_for("login"))
 
-    infopage = Infopage.query.all()
+    infopage = Infopage.query.filter_by(owner=current_user.email)
     return render_template("info_list.html", infopage=infopage)
 
 
