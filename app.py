@@ -182,6 +182,13 @@ def add_user():
         email = form.email.data
         user_obj = Users.query.filter_by(email=email).first()
 
+        if first_name == "":
+            return redirect(url_for('add_user'))
+        elif last_name == "":
+            return redirect(url_for('add_user'))
+        elif email == "":
+            return redirect(url_for('add_user'))
+
         if user_obj == None:
             new_user = Users(first_name,last_name, email)
             user_auth_stub = AuthenticationStub(email)

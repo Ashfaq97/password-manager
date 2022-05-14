@@ -11,7 +11,7 @@ class signup(FlaskForm):
 class LoginForm(FlaskForm):
     first_name = StringField("First Name: ")
     last_name = StringField("Last Name: ")
-    email = StringField("Email: ")
+    email = EmailField("Email: ")
     submit = SubmitField('Continue')
 
 class AuthCodeForm(FlaskForm):
@@ -20,7 +20,7 @@ class AuthCodeForm(FlaskForm):
 
 class EnteryForm(FlaskForm):
     service_name = StringField("Service Name: ")
-    email = StringField("Email: ")
+    email = EmailField("Email: ")
     password = StringField("Password: ")
     submit = SubmitField('Save')
 
